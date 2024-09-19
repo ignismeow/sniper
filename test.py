@@ -1,14 +1,14 @@
 from web3 import Web3
 import json
-from dotenv import load_dotenv
-import os
+
 
 # Connect Ethereum network
-infura_url = os.getenv('LOCAL_WSS')
-web3 = Web3(Web3.HTTPProvider(infura_url))
+
+LOCAL_HTTP = 'ws://127.0.0.1:8545'
+web3 = Web3(Web3.LegacyWebSocketProvider(LOCAL_HTTP))
 
 # Connect acccount
-private_key = os.getenv('PRIVATE_KEY')
+private_key = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
 account =  web3.eth.account.from_key(private_key)
 
 # import abi's and addresses
@@ -36,7 +36,7 @@ def deploy_erc20_token():
         "ABC",
         web3.to_wei("1000000000", 'ether')
     ).build_transaction({
-        'chainId': 1,  # Update to your network's chain ID
+        'chainId': 31337,  # Update to your network's chain ID
         'gas': 5000000,
         'gasPrice': web3.to_wei('20', 'gwei'),
         'nonce': nonce
@@ -57,7 +57,7 @@ def create_liquidity_pool(token_address):
             weth_address,
             token_address
         ).build_transaction({
-            'chainId': 1,  # Update to your network's chain ID
+            'chainId': 31337,  # Update to your network's chain ID
             'gas': 5000000,
             'gasPrice': web3.to_wei('20', 'gwei'),
             'nonce': nonce
@@ -80,7 +80,7 @@ def approve_token_for_router(token_address):
             router_address,
             web3.to_wei("10000", 'ether')
         ).build_transaction({
-            'chainId': 1,  # Update to your network's chain ID
+            'chainId': 31337,  # Update to your network's chain ID
             'gas': 500000,
             'gasPrice': web3.to_wei('20', 'gwei'),
             'nonce': nonce
@@ -105,7 +105,7 @@ def add_liquidity(token_address):
             account.address,
             int(web3.eth.get_block('latest')['timestamp']) + 600,  # Deadline (10 minutes from now)
         ).build_transaction({
-            'chainId': 1,  # Update to your network's chain ID
+            'chainId': 31337,  # Update to your network's chain ID
             'value': web3.to_wei("10", 'ether'),  # Add 10 ETH
             'gas': 5000000,
             'gasPrice': web3.to_wei('20', 'gwei'),

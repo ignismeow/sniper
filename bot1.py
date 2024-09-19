@@ -3,17 +3,14 @@ import json
 import csv
 import time
 from web3 import Web3
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
-
-LOCAL_WSS = os.getenv('LOCAL_WSS')
+LOCAL_WSS = 'ws://127.0.0.1:8545'
 provider = Web3(Web3.LegacyWebSocketProvider(LOCAL_WSS))
 
-PRIVATE_KEY = os.getenv('PRIVATE_KEY')
-account =  provider.eth.account.from_key(PRIVATE_KEY)
+private_key = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+account =  provider.eth.account.from_key(private_key)
 wallet_address = account.address
+print(wallet_address)
 
 # Load contract ABIs and addresses
 with open("blockchain.json") as f:
@@ -34,9 +31,12 @@ TOKEN_LIST_FILE = 'tokenList.csv'
 
 # Function to initialize PairCreated event listener
 def init():
-    event_filter = factory_contract.events.PairCreated.create_filter(from_block = 'latest')
+    print("Event listener started")
+    event_filter = factory_contract.events.PairCreated.create_filter(from_block='latest')
+    
     while True:
-        for event in event_filter.get_new_entries():
+        print("Checking for new events...")
+        for event in event_filter.get_all_entries():
             token0, token1, pair_address = event.args.token0, event.args.token1, event.args.pair
             print(f"New pair detected: {pair_address}, token0: {token0}, token1: {token1}")
 
@@ -50,7 +50,8 @@ def init():
                 writer = csv.writer(f)
                 writer.writerow([pair_address, t0, t1])
 
-        time.sleep(5)
+        # Use asyncio.sleep for non-blocking delay
+        asyncio.run(asyncio.sleep(1))
 
 # Function to handle sniping
 async def snipe():
@@ -146,6 +147,7 @@ async def main():
     # Initialize PairCreated listener in a separate thread
     loop.run_in_executor(None, init)
 
+
     while True:
         print('Heartbeat')
         await snipe()
@@ -154,3 +156,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
