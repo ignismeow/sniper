@@ -1,15 +1,16 @@
+
+# Connect acccount
 from web3 import Web3
 import json
 
 
 # Connect Ethereum network
+LOCAL_HTTP = 'http://127.0.0.1:8545'
+web3 = Web3(Web3.HTTPProvider(LOCAL_HTTP))
 
-LOCAL_HTTP = 'ws://127.0.0.1:8545'
-web3 = Web3(Web3.LegacyWebSocketProvider(LOCAL_HTTP))
-
-# Connect acccount
-private_key = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
-account =  web3.eth.account.from_key(private_key)
+# Connect account
+private_key = "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"  # Replace with your actual private key
+account = web3.eth.account.from_key(private_key)
 
 # import abi's and addresses
 with open('blockchain.json') as f:
@@ -26,7 +27,6 @@ weth_address = blockchain['WETHAddress']
 erc20_contract = web3.eth.contract(abi=erc20_abi, bytecode=erc20_bytecode)
 factory_contract = web3.eth.contract(address=factory_address, abi=factory_abi)
 router_contract = web3.eth.contract(address=router_address, abi=router_abi)
-
 
 # Deploy ERC20 Token
 def deploy_erc20_token():   
@@ -47,7 +47,7 @@ def deploy_erc20_token():
     tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     
     token_address = tx_receipt.contractAddress
-    print(f"Test token deployed: {token_address}")
+    print(f"Token deployed: {token_address}")
     return token_address
   
 def create_liquidity_pool(token_address):
@@ -65,8 +65,10 @@ def create_liquidity_pool(token_address):
 
         signed_txn = web3.eth.account.sign_transaction(transaction, private_key)
         tx_hash = web3.eth.send_raw_transaction(signed_txn.raw_transaction)
-        web3.eth.wait_for_transaction_receipt(tx_hash)
-        print('Test liquidity pool deployed')
+        tx_receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+        deployer_address = tx_receipt['from']
+        print('Token address',deployer_address)
+        print('Test liquidity pool deployed: ')
     except Exception as e:
         print(f"Error creating liquidity pool: {e}")
         raise

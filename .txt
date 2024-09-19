@@ -1,3 +1,10 @@
+The issue you're facing could be related to the way the event listener is set up. In the provided code, the `init` function creates an event filter that listens for new `PairCreated` events from the latest block. However, this approach may not work as expected when running on a local Ethereum node or fork.
+
+To address this issue, we can modify the event listener to listen for events from the beginning of the blockchain. Additionally, we'll move the event listener logic into the main loop to ensure it's continuously checking for new events.
+
+Here's the rewritten code with the necessary changes:
+
+```python
 import asyncio
 import json
 import csv
@@ -6,8 +13,6 @@ from web3 import Web3
 
 LOCAL_WSS = 'ws://127.0.0.1:8545'
 provider = Web3(Web3.LegacyWebSocketProvider(LOCAL_WSS))
-print("WebSocket Provider connected:", provider.is_connected())
-
 
 private_key = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
 account =  provider.eth.account.from_key(private_key)
@@ -30,29 +35,6 @@ router_contract = provider.eth.contract(
 
 SNIPE_LIST_FILE = 'snipeList.csv'
 TOKEN_LIST_FILE = 'tokenList.csv'
-
-# Function to initialize PairCreated event listener
-def init():
-    print("Event listener started")
-    event_filter = factory_contract.events.PairCreated.create_filter(from_block = 'earliest')
-
-    while True:
-        for event in event_filter.get_new_entries():
-            token0, token1, pair_address = event.args.token0, event.args.token1, event.args.pair
-            print(f"New pair detected: {pair_address}, token0: {token0}, token1: {token1}")
-
-            if token0 != blockchain['WETHAddress'] and token1 != blockchain['WETHAddress']:
-                continue
-
-            t0 = token0 if token0 == blockchain['WETHAddress'] else token1
-            t1 = token1 if token0 != blockchain['WETHAddress'] else token1
-
-            with open(SNIPE_LIST_FILE, 'a', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow([pair_address, t0, t1])
-
-        # Use asyncio.sleep for non-blocking delay
-        asyncio.run(asyncio.sleep(1))
 
 # Function to handle sniping
 async def snipe():
@@ -107,53 +89,4 @@ async def snipe():
             print(f"Transaction failed: {e}")
 
         # Update snipeList after transaction
-        snipe_list = [item for item in snipe_list if item != snipe]
-        with open(SNIPE_LIST_FILE, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerows(snipe_list)
-
-# Function to manage positions
-async def manage_position():
-    print("Managing positions...")
-    with open(TOKEN_LIST_FILE, 'r') as f:
-        reader = csv.reader(f)
-        token_list = list(reader)
-
-    for token in token_list:
-        block_number, weth_address, token_address, price = token
-        print(f"Checking position for token {token_address} bought at price {price}")
-
-        token_contract = provider.eth.contract(
-            address=token_address,
-            abi=blockchain['abi']
-        )
-        balance = token_contract.functions.balanceOf(blockchain['recipient']).call()
-        print(f"Current balance of {token_address}: {balance}")
-
-        stop_loss_threshold = Web3.to_wei(0.01, 'ether')
-        take_profit_threshold = Web3.to_wei(0.2, 'ether')
-
-        if balance > stop_loss_threshold:
-            print(f"Selling {token_address} due to stop loss")
-            # Add stop loss logic here
-        elif balance > take_profit_threshold:
-            print(f"Selling {token_address} to take profit")
-            # Add take profit logic here
-
-# Main function to run the bot
-async def main():
-    print("Trading bot starting...")
-    loop = asyncio.get_event_loop()
-
-    # Initialize PairCreated listener in a separate thread
-    loop.run_in_executor(None, init)
-
-
-    while True:
-        print('Heartbeat')
-        await snipe()
-        await manage_position()
-        await asyncio.sleep(3)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+        snipe_list =
